@@ -3,38 +3,38 @@ import CryptoJS from 'crypto-js'
 
 import apiConfig from '../config/api.config'
 
-// Just a disguise to obfuscate required tokens (including but not limited to client secret,
-// access tokens, and refresh tokens), used along with the following two functions
+// 只是伪装需要的令牌（包括但不限于客户端秘密，
+// 访问令牌和刷新令牌），与以下两个函数一起使用
 const AES_SECRET_KEY = 'onedrive-vercel-index'
 export function obfuscateToken(token: string): string {
-  // Encrypt token with AES
+  // 使用 AES 加密令牌
   const encrypted = CryptoJS.AES.encrypt(token, AES_SECRET_KEY)
   return encrypted.toString()
 }
 export function revealObfuscatedToken(obfuscated: string): string {
-  // Decrypt SHA256 obfuscated token
+  // 解密 SHA256 混淆令牌
   const decrypted = CryptoJS.AES.decrypt(obfuscated, AES_SECRET_KEY)
   return decrypted.toString(CryptoJS.enc.Utf8)
 }
 
-// Generate the Microsoft OAuth 2.0 authorization URL, used for requesting the authorisation code
+// 生成 Microsoft OAuth 2.0 授权 URL，用于请求授权码
 export function generateAuthorisationUrl(): string {
   const { clientId, redirectUri, authApi, scope } = apiConfig
   const authUrl = authApi.replace('/token', '/authorize')
 
-  // Construct URL parameters for OAuth2
+  // 为 OAuth2 构造 URL 参数
   const params = new URLSearchParams()
   params.append('client_id', clientId)
   params.append('redirect_uri', redirectUri)
   params.append('response_type', 'code')
   params.append('scope', scope)
   params.append('response_mode', 'query')
-
+  console.error(`${authUrl}?${params.toString()}`);
   return `${authUrl}?${params.toString()}`
 }
 
-// The code returned from the Microsoft OAuth 2.0 authorization URL is a request URL with hostname
-// http://localhost and URL parameter code. This function extracts the code from the request URL
+// 从 Microsoft OAuth 2.0 授权 URL 返回的代码是带有主机名的请求 URL
+// http://localhost 和 URL 参数代码。 此函数从请求 URL 中提取代码
 export function extractAuthCodeFromRedirected(url: string): string {
   // Return empty string if the url is not the defined redirect uri
   if (!url.startsWith(apiConfig.redirectUri)) {
@@ -46,7 +46,7 @@ export function extractAuthCodeFromRedirected(url: string): string {
   return params.get('code') ?? ''
 }
 
-// After a successful authorisation, the code returned from the Microsoft OAuth 2.0 authorization URL
+// 授权成功后，从 Microsoft OAuth 2.0 授权 URL 返回的代码
 // will be used to request an access token. This function requests the access token with the authorisation code
 // and returns the access token and refresh token on success.
 export async function requestTokenWithAuthCode(
